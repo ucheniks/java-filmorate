@@ -47,13 +47,13 @@ public class BaseDbStorage<T> {
     }
 
     protected void update(String query, Object... params) {
-        log.debug("Выполнение обновления: {} с параметрами: {}", query, params);
+        log.debug("Выполнение обновления/удаления: {} с параметрами: {}", query, params);
         int rowsUpdated = jdbc.update(query, params);
         if (rowsUpdated == 0) {
-            log.error("Не удалось обновить данные. Запрос: {}, параметры: {}", query, params);
-            throw new InternalServerException("Не удалось обновить данные");
+            log.error("Не удалось обновить/удалить данные. Запрос: {}, параметры: {}", query, params);
+            throw new InternalServerException("Не удалось обновить/удалить данные");
         }
-        log.debug("Обновлено {} строк", rowsUpdated);
+        log.debug("Обновлено/удалено {} строк", rowsUpdated);
     }
 
     protected long insert(String query, Object... params) {

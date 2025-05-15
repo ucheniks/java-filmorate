@@ -8,6 +8,8 @@ import ru.yandex.practicum.filmorate.exceptions.*;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.dal.FilmDbStorage;
 import ru.yandex.practicum.filmorate.dal.UserDbStorage;
+import ru.yandex.practicum.filmorate.model.enums.EventOperation;
+import ru.yandex.practicum.filmorate.model.enums.EventType;
 
 import java.util.List;
 
@@ -18,6 +20,7 @@ import java.util.List;
 public class FilmService {
     private final FilmDbStorage filmStorage;
     private final UserDbStorage userStorage;
+    private final EventService eventService;
 
     public List<Film> getFilms() {
         return filmStorage.getFilms();
@@ -40,11 +43,22 @@ public class FilmService {
     public void addLike(Long filmId, Long userId) {
         Film film = getFilmById(filmId);
         userStorage.getUserById(userId);
-
         if (film.getLikes().contains(userId)) {
-            throw new ValidationException("Пользователь уже поставил лайк");
+            eventService.addEvent(
+                    userId,
+                    EventType.LIKE,
+                    EventOperation.ADD,
+                    filmId
+            );
+            return;
         }
         filmStorage.addLike(filmId, userId);
+        eventService.addEvent(
+                userId,
+                EventType.LIKE,
+                EventOperation.ADD,
+                filmId
+        );
     }
 
     public void removeLike(Long filmId, Long userId) {
@@ -55,12 +69,38 @@ public class FilmService {
             throw new NotFoundException("Лайк не найден");
         }
         filmStorage.removeLike(filmId, userId);
+        eventService.addEvent(
+                userId,
+                EventType.LIKE,
+                EventOperation.REMOVE,
+                filmId
+        );
     }
 
-    public List<Film> getPopularFilms(int count) {
-        if (count <= 0) {
+    public List<Film> getPopularFilms(Integer count, Long genreId, Integer year) {
+        if (count != null && count <= 0) {
             throw new ParameterNotValidException("count Должно быть положительным");
         }
-        return filmStorage.getPopularFilms(count);
+        return filmStorage.getPopularFilms(count, genreId, year);
+    }
+
+    public List<Film> getDirectorsFilms(Long directorId, String sortBy) {
+        return filmStorage.getDirectorsFilms(directorId, sortBy);
+    }
+
+    public List<Film> getCommonFilms(Long userId, Long friendId) {
+        if (userId == null || friendId == null) {
+            throw new ParameterNotValidException("userId и friendId не могут быть null");
+        }
+        return filmStorage.getCommonFilms(userId, friendId);
+    }
+
+    public void deleteFilmById(Long id) {
+        log.info("Удаления фильма с id {}", id);
+        filmStorage.deleteFilmById(id);
+    }
+
+    public List<Film> searchFilms(String query, String[] by) {
+        return filmStorage.searchFilms(query, by);
     }
 }

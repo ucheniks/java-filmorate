@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.service.UserService;
 
@@ -70,5 +71,17 @@ public class UserController {
             @PathVariable Long otherId) {
         log.info("Поиск общих друзей пользователей {} и {}", id, otherId);
         return userService.getCommonFriends(id, otherId);
+    }
+
+    @DeleteMapping("/{userId}")
+    public void deleteUserById(@PathVariable Long userId) {
+        log.info("Удаление пользователя с id {}", userId);
+        userService.deleteUserById(userId);
+    }
+
+    @GetMapping("/{id}/recommendations")
+    public List<Film> showRecommendations(@PathVariable Long id) {
+        log.info("Показ рекомендаций фильмов для пользователя {}", id);
+        return userService.showRecommendations(id);
     }
 }

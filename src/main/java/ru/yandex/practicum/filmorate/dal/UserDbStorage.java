@@ -6,6 +6,7 @@ import org.springframework.stereotype.Repository;
 import ru.yandex.practicum.filmorate.dal.mappers.UserRowMapper;
 import ru.yandex.practicum.filmorate.exceptions.NotFoundException;
 import ru.yandex.practicum.filmorate.exceptions.ValidationException;
+import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.storage.user.UserStorage;
 
@@ -48,12 +49,18 @@ public class UserDbStorage extends BaseDbStorage<User> implements UserStorage {
             UPDATE friends
             SET status = 'UNCONFIRMED'
             WHERE user_id = ? AND friend_id = ?""";
+    private static final String REMOVE_USER_BY_ID_QUERY = """
+            DELETE FROM users
+            WHERE user_id = ?
+            """;
 
     private final JdbcTemplate jdbc;
+    private final FilmDbStorage filmStorage;
 
-    public UserDbStorage(JdbcTemplate jdbc, UserRowMapper userRowMapper) {
+    public UserDbStorage(JdbcTemplate jdbc, UserRowMapper userRowMapper, FilmDbStorage filmStorage) {
         super(jdbc, userRowMapper);
         this.jdbc = jdbc;
+        this.filmStorage = filmStorage;
     }
 
     @Override
@@ -87,8 +94,8 @@ public class UserDbStorage extends BaseDbStorage<User> implements UserStorage {
 
     @Override
     public User updateUser(User user) {
-        validateUser(user);
         getUserById(user.getId());
+        validateUser(user);
 
         update(UPDATE_QUERY,
                 user.getEmail(),
@@ -130,6 +137,16 @@ public class UserDbStorage extends BaseDbStorage<User> implements UserStorage {
         getUserById(userId);
         getUserById(otherId);
         return jdbc.query(GET_COMMON_FRIENDS_QUERY, mapper, userId, otherId);
+    }
+
+    public void deleteUserById(Long id) {
+        getUserById(id);
+        update(REMOVE_USER_BY_ID_QUERY, id);
+    }
+
+    public List<Film> showRecommendations(Long userId) {
+        getUserById(userId);
+        return filmStorage.getRecommendations(userId);
     }
 
     private void validateUser(User user) {

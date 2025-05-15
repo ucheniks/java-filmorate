@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Component;
+import ru.yandex.practicum.filmorate.dal.DirectorRepository;
 import ru.yandex.practicum.filmorate.dal.GenreRepository;
 import ru.yandex.practicum.filmorate.dal.MpaRatingRepository;
 import ru.yandex.practicum.filmorate.model.Film;
@@ -20,6 +21,7 @@ public class FilmRowMapper implements RowMapper<Film> {
 
     private final MpaRatingRepository mpaRatingRepository;
     private final GenreRepository genreRepository;
+    private final DirectorRepository directorRepository;
     private final JdbcTemplate jdbcTemplate;
 
     @Override
@@ -35,6 +37,8 @@ public class FilmRowMapper implements RowMapper<Film> {
         film.setMpa(mpaRatingRepository.getById(ratingId));
 
         film.setGenres(new HashSet<>(genreRepository.findByFilmId(film.getId())));
+
+        film.setDirectors(new HashSet<>(directorRepository.findByFilmId(film.getId())));
 
         List<Long> likes = jdbcTemplate.queryForList(FIND_LIKES_QUERY, Long.class, film.getId());
         film.setLikes(new HashSet<>(likes));
