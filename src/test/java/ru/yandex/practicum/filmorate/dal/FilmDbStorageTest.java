@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.jdbc.JdbcTest;
 import org.springframework.context.annotation.Import;
+import ru.yandex.practicum.filmorate.dal.mappers.DirectorRowMapper;
 import ru.yandex.practicum.filmorate.dal.mappers.FilmRowMapper;
 import ru.yandex.practicum.filmorate.dal.mappers.GenreRowMapper;
 import ru.yandex.practicum.filmorate.dal.mappers.MpaRowMapper;
@@ -19,7 +20,7 @@ import static org.assertj.core.api.Assertions.*;
 
 @JdbcTest
 @AutoConfigureTestDatabase
-@Import({FilmDbStorage.class, FilmRowMapper.class, MpaRatingRepository.class, GenreRepository.class, MpaRowMapper.class, GenreRowMapper.class})
+@Import({FilmDbStorage.class, FilmRowMapper.class, MpaRatingRepository.class, GenreRepository.class, MpaRowMapper.class, GenreRowMapper.class, DirectorRepository.class, DirectorRowMapper.class})
 class FilmDbStorageTest {
 
     @Autowired
@@ -71,7 +72,7 @@ class FilmDbStorageTest {
         film2.setMpa(new MpaRating(2L, null));
         film2 = filmStorage.addFilm(film2);
 
-        List<Film> popularFilms = filmStorage.getPopularFilms(2);
+        List<Film> popularFilms = filmStorage.getPopularFilms(2, null, null);
 
         assertThat(popularFilms).hasSize(2);
     }

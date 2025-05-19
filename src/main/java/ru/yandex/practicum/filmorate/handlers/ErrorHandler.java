@@ -3,6 +3,7 @@ package ru.yandex.practicum.filmorate.handlers;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -11,6 +12,9 @@ import ru.yandex.practicum.filmorate.exceptions.InternalServerException;
 import ru.yandex.practicum.filmorate.exceptions.NotFoundException;
 import ru.yandex.practicum.filmorate.exceptions.ParameterNotValidException;
 import ru.yandex.practicum.filmorate.exceptions.ValidationException;
+
+import java.util.HashMap;
+import java.util.Map;
 
 @RestControllerAdvice
 public class ErrorHandler {
@@ -36,7 +40,11 @@ public class ErrorHandler {
     @ExceptionHandler
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ErrorResponse handleSpringValidationErrors(final MethodArgumentNotValidException e) {
-        return new ErrorResponse(e.getMessage());
+        Map<String, String> errors = new HashMap<>();
+        for (FieldError error : e.getBindingResult().getFieldErrors()) {
+            errors.put(error.getField(), error.getDefaultMessage());
+        }
+        return new ErrorResponse("Validation Error", errors);
     }
 
     @ExceptionHandler
@@ -51,10 +59,22 @@ public class ErrorHandler {
         return new ErrorResponse("Произошла непредвиденная ошибка.");
     }
 
+    @ExceptionHandler
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ErrorResponse handleIllegalArgumentError(final IllegalArgumentException e) {
+        return new ErrorResponse(e.getMessage());
+    }
+
     @Getter
     @RequiredArgsConstructor
     public class ErrorResponse {
         private final String error;
+        private Map<String, String> details;
+
+        public ErrorResponse(String error, Map<String, String> details) {
+            this.error = error;
+            this.details = details;
+        }
     }
 
 }

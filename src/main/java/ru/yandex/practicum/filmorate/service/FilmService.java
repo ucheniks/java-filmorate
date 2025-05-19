@@ -8,6 +8,8 @@ import ru.yandex.practicum.filmorate.exceptions.*;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.dal.FilmDbStorage;
 import ru.yandex.practicum.filmorate.dal.UserDbStorage;
+import ru.yandex.practicum.filmorate.model.enums.EventOperation;
+import ru.yandex.practicum.filmorate.model.enums.EventType;
 
 import java.util.List;
 
@@ -18,12 +20,15 @@ import java.util.List;
 public class FilmService {
     private final FilmDbStorage filmStorage;
     private final UserDbStorage userStorage;
+    private final EventService eventService;
 
     public List<Film> getFilms() {
+        log.info("Получение списка всех фильмов на уровне сервиса");
         return filmStorage.getFilms();
     }
 
     public Film getFilmById(Long id) {
+        log.info("Получение фильма с ID: {} на уровне сервиса", id);
         return filmStorage.getFilmById(id);
     }
 
@@ -33,21 +38,35 @@ public class FilmService {
     }
 
     public Film updateFilm(Film film) {
+        log.info("Обновление фильма с ID {} на уровне сервиса", film.getId());
         getFilmById(film.getId());
         return filmStorage.updateFilm(film);
     }
 
     public void addLike(Long filmId, Long userId) {
+        log.info("Добавление лайка фильму с ID {} от пользователя с ID {} на уровне сервиса", filmId, userId);
         Film film = getFilmById(filmId);
         userStorage.getUserById(userId);
-
         if (film.getLikes().contains(userId)) {
-            throw new ValidationException("Пользователь уже поставил лайк");
+            eventService.addEvent(
+                    userId,
+                    EventType.LIKE,
+                    EventOperation.ADD,
+                    filmId
+            );
+            return;
         }
         filmStorage.addLike(filmId, userId);
+        eventService.addEvent(
+                userId,
+                EventType.LIKE,
+                EventOperation.ADD,
+                filmId
+        );
     }
 
     public void removeLike(Long filmId, Long userId) {
+        log.info("Удаление лайка у фильма с ID {} от пользователя с ID {} на уровне сервиса", filmId, userId);
         Film film = getFilmById(filmId);
         userStorage.getUserById(userId);
 
@@ -55,12 +74,42 @@ public class FilmService {
             throw new NotFoundException("Лайк не найден");
         }
         filmStorage.removeLike(filmId, userId);
+        eventService.addEvent(
+                userId,
+                EventType.LIKE,
+                EventOperation.REMOVE,
+                filmId
+        );
     }
 
-    public List<Film> getPopularFilms(int count) {
-        if (count <= 0) {
+    public List<Film> getPopularFilms(Integer count, Long genreId, Integer year) {
+        log.info("Получение популярных фильмов на уровне сервиса");
+        if (count != null && count <= 0) {
             throw new ParameterNotValidException("count Должно быть положительным");
         }
-        return filmStorage.getPopularFilms(count);
+        return filmStorage.getPopularFilms(count, genreId, year);
+    }
+
+    public List<Film> getDirectorsFilms(Long directorId, String sortBy) {
+        log.info("Получение фильмов режиссёра, отсортированных по {} на уровне сервиса", sortBy);
+        return filmStorage.getDirectorsFilms(directorId, sortBy);
+    }
+
+    public List<Film> getCommonFilms(Long userId, Long friendId) {
+        log.info("Получение общих фильмов у пользователей с ID {} и {} на уровне сервиса", userId, friendId);
+        if (userId == null || friendId == null) {
+            throw new ParameterNotValidException("userId и friendId не могут быть null");
+        }
+        return filmStorage.getCommonFilms(userId, friendId);
+    }
+
+    public void deleteFilmById(Long id) {
+        log.info("Удаления фильма с id {} на уровне сервиса", id);
+        filmStorage.deleteFilmById(id);
+    }
+
+    public List<Film> searchFilms(String query, String[] by) {
+        log.info("Получение фильмов с подстрокой {} в {} на уровне сервиса", query, by);
+        return filmStorage.searchFilms(query, by);
     }
 }
